@@ -377,9 +377,69 @@ if __name__ == "__main__":
             <span class="info-sub">Belum ada serangan analitis praktis hingga saat ini</span>
           </div>
         </div>
-        <p class="card-desc">
-          <strong>Mekanisme SPN:</strong> Berbeda dengan Feistel, seluruh blok 128-bit diproses serentak di tiap ronde melalui 4 transformasi matematis: <strong>SubBytes</strong> (substitusi non-linear S-box GF($2^8$)), <strong>ShiftRows</strong> (permutasi siklis per baris), <strong>MixColumns</strong> (perkalian matriks linear per kolom untuk difusi), dan <strong>AddRoundKey</strong> (XOR dengan subkunci ronde). Ronde terakhir mengecualikan MixColumns.
-        </p>
+        <!-- Penjelasan Mekanisme SPN AES Disederhanakan -->
+        <div class="feistel-flow-box">
+          <div class="flow-header">
+            <h4>Alur Mekanisme SPN AES (4 Transformasi Ronde)</h4>
+            <span class="badge-mini">Struktur State Matrix $4 \times 4$</span>
+          </div>
+          <div class="feistel-steps-grid">
+            <div class="feistel-step-card-modern">
+              <div class="step-card-top">
+                <span class="step-num-badge aes-badge">1</span>
+                <span class="step-title">SubBytes (Substitusi Non-Linear)</span>
+              </div>
+              <p class="step-text">
+                Setiap byte diganti byte baru menggunakan tabel S-Box berbasis inversi multiplikatif di bidang <strong>GF($2^8$)</strong>.
+              </p>
+              <div class="step-chips">
+                <span class="chip-item">Efek: <strong>Confusion (Kebingungan)</strong></span>
+              </div>
+            </div>
+
+            <div class="feistel-step-card-modern">
+              <div class="step-card-top">
+                <span class="step-num-badge aes-badge">2</span>
+                <span class="step-title">ShiftRows (Pergeseran Baris)</span>
+              </div>
+              <p class="step-text">
+                Baris-baris State Matrix digeser siklis ke kiri secara bertingkat:
+              </p>
+              <ul class="step-bullet-list">
+                <li>Baris 0: Tanpa pergeseran (0 byte).</li>
+                <li>Baris 1: Geser 1 byte &bull; Baris 2: Geser 2 byte.</li>
+                <li>Baris 3: Geser 3 byte ke kiri.</li>
+              </ul>
+            </div>
+
+            <div class="feistel-step-card-modern">
+              <div class="step-card-top">
+                <span class="step-num-badge aes-badge">3</span>
+                <span class="step-title">MixColumns (Pencampuran Kolom)</span>
+              </div>
+              <p class="step-text">
+                Tiap kolom dikalikan matriks konstan di atas bidang GF($2^8$). Tiap byte keluaran dipengaruhi seluruh 4 byte masukan kolom.
+              </p>
+              <div class="step-chips">
+                <span class="chip-item">Efek: <strong>Diffusion (Penyebaran Bit)</strong></span>
+                <span class="chip-item text-muted">Dilewati di ronde akhir</span>
+              </div>
+            </div>
+
+            <div class="feistel-step-card-modern">
+              <div class="step-card-top">
+                <span class="step-num-badge aes-badge">4</span>
+                <span class="step-title">AddRoundKey (Penyuntikan Kunci)</span>
+              </div>
+              <p class="step-text">
+                Seluruh 128-bit State Matrix di-XOR langsung dengan Subkunci Ronde ($K_i$) hasil dari ekspansi kunci:
+              </p>
+              <div class="key-reversal-box font-mono" style="color:var(--accent-cyan);">
+                Key Schedule: RotWord &bull; SubWord &bull; Rcon
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Simulator Lab AES -->

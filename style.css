@@ -1130,6 +1130,12 @@ body {
   flex-shrink: 0;
 }
 
+.step-num-badge.aes-badge {
+  background: rgba(0, 240, 255, 0.2);
+  color: var(--accent-cyan);
+  border-color: var(--accent-cyan);
+}
+
 .step-title {
   font-size: 0.88rem;
   font-weight: 700;
