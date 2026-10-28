@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Praktik &amp; Perbandingan DES vs AES | Kelompok 1</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Header Banner sesuai kartu slide Kelompok 1 -->
+    <header class="slide-banner-card">
+      <div class="slide-accent-stripe"></div>
+      <div class="slide-banner-content">
+        <div class="banner-badge-row">
+          <span class="slide-group-tag">KELOMPOK 1</span>
+          <span class="banner-sub-tag">TEKNOLOGI KEAMANAN SIBER &bull; PERTEMUAN 7</span>
+        </div>
+        <h1 class="slide-main-title">Praktik &amp; Perbandingan Kriptografi Simetris (DES &amp; AES)</h1>
+        <p class="slide-desc">Pengujian enkripsi, dekripsi, throughput komputasi, efek avalanche, dan evaluasi mode operasi.</p>
+      </div>
+    </header>
+
+    <!-- Navigasi Tab Utama -->
+    <nav class="nav-tabs" id="mainNav">
+      <button class="nav-btn active" data-tab="tab-lab">
+        <span class="tab-badge">01</span>
+        <div class="btn-text-wrap">
+          <span class="nav-title">Praktik Enkripsi &amp; Dekripsi</span>
+          <span class="nav-sub">Pengujian bersamaan DES dan AES</span>
+        </div>
+      </button>
+
+      <button class="nav-btn" data-tab="tab-komparasi">
+        <span class="tab-badge">02</span>
+        <div class="btn-text-wrap">
+          <span class="nav-title">Perbandingan Performa &amp; Keamanan</span>
+          <span class="nav-sub">Benchmark waktu, efek avalanche, ruang kunci</span>
+        </div>
+      </button>
+
+      <button class="nav-btn" data-tab="tab-mode">
+        <span class="tab-badge">03</span>
+        <div class="btn-text-wrap">
+          <span class="nav-title">Mode Operasi Enkripsi</span>
+          <span class="nav-sub">Evaluasi blok: ECB, CBC, CTR, dan GCM</span>
+        </div>
+      </button>
+
+      <button class="nav-btn" data-tab="tab-arsitektur">
+        <span class="tab-badge">04</span>
+        <div class="btn-text-wrap">
+          <span class="nav-title">Arsitektur &amp; Skrip Implementasi</span>
+          <span class="nav-sub">Feistel DES, SPN AES, Python dan OpenSSL</span>
+        </div>
+      </button>
+    </nav>
+
+    <!-- =================================================================== -->
+    <!-- TAB 1: PRAKTIK ENKRIPSI & DEKRIPSI (DES & AES) -->
+    <!-- =================================================================== -->
+    <section id="tab-lab" class="tab-content active">
+      <div class="section-heading">
+        <h2>Praktik Enkripsi &amp; Dekripsi Data</h2>
+        <p>Plaintext yang sama diproses secara paralel pada DES (64-bit Feistel) dan AES (128-bit SPN).</p>
+      </div>
+
+      <!-- Input Panel Terpadu -->
+      <div class="card glass-card">
+        <div class="card-header">
+          <h3>Parameter Input</h3>
+          <div class="header-actions">
+            <button class="btn btn-sm btn-outline" id="btnPreset1">Preset: Pesan Singkat</button>
+            <button class="btn btn-sm btn-outline" id="btnPreset2">Preset: Data Panjang</button>
+          </div>
+        </div>
+
+        <div class="input-controls-grid">
+          <div class="form-group span-2">
+            <div class="label-row">
+              <label for="inputPlaintext">Plaintext (Pesan Asli):</label>
+              <span class="char-counter" id="plainCharCount">34 karakter</span>
+            </div>
+            <textarea id="inputPlaintext" class="textarea-modern" rows="2" placeholder="Ketik teks rahasia di sini...">Kriptografi Simetris Pertemuan 7</textarea>
+          </div>
+
+          <div class="form-group">
+            <div class="label-row">
+              <label for="secretKey">Kunci Rahasia (Passphrase / Hex):</label>
+              <button class="btn-text" id="btnRandomKey">Acak Kunci</button>
+            </div>
+            <input type="text" id="secretKey" class="input-modern font-mono" value="KunciRahasiaSiber1">
+            <small class="helper-text">Kunci dinormalisasi untuk DES (8 byte) dan AES (16 byte).</small>
+          </div>
+
+          <div class="form-group">
+            <div class="label-row">
+              <label for="inputIV">Initialization Vector (IV):</label>
+              <button class="btn-text" id="btnRandomIV">Acak IV</button>
+            </div>
+            <input type="text" id="inputIV" class="input-modern font-mono" value="1234567890abcdef">
+            <small class="helper-text">Digunakan pada mode CBC untuk mengacak blok pertama.</small>
+          </div>
+        </div>
+
+        <div class="action-bar-center">
+          <button class="btn btn-primary btn-lg" id="btnRunBoth">Enkripsi (DES &amp; AES)</button>
+          <button class="btn btn-secondary btn-lg" id="btnDecryptBoth">Dekripsi (DES &amp; AES)</button>
+        </div>
+      </div>
+
+      <!-- Side-by-Side Dual Engine Comparison -->
+      <div class="grid-2col">
+        <!-- DES Column -->
+        <div class="card glass-card engine-card engine-des">
+          <div class="card-header">
+            <div class="engine-title-wrap">
+              <span class="engine-badge badge-des">DES</span>
+              <h3>Data Encryption Standard</h3>
+            </div>
+            <span class="tag tag-warning" id="desStatus">Siap</span>
+          </div>
+
+          <div class="engine-spec-list">
+            <span><strong>Blok:</strong> 64-bit (8 B)</span>
+            <span><strong>Kunci:</strong> 56-bit efektif</span>
+            <span><strong>Ronde:</strong> 16 Feistel</span>
+            <span><strong>Mode:</strong> CBC (PKCS#7)</span>
+          </div>
+
+          <div class="output-group">
+            <div class="label-row">
+              <label>Ciphertext (Hexadecimal):</label>
+              <button class="btn-text" id="btnCopyDesHex">Salin</button>
+            </div>
+            <div class="output-box font-mono" id="desCipherHex">-</div>
+          </div>
+
+          <div class="output-group">
+            <div class="label-row">
+              <label>Ciphertext (Base64):</label>
+              <button class="btn-text" id="btnCopyDesB64">Salin</button>
+            </div>
+            <div class="output-box font-mono" id="desCipherB64">-</div>
+          </div>
+
+          <div class="output-group">
+            <label>Hasil Dekripsi:</label>
+            <div class="output-box font-mono highlight-box" id="desDecryptedText">-</div>
+          </div>
+
+          <div class="engine-meta-row">
+            <div class="meta-item">
+              <span class="lbl">Waktu Eksekusi:</span>
+              <span class="val" id="desTimeVal">0.0 ms</span>
+            </div>
+            <div class="meta-item">
+              <span class="lbl">Status Hasil:</span>
+              <span class="val" id="desMatchVal">&mdash;</span>
+            </div>
+          </div>
+
+          <button class="btn btn-outline btn-sm" id="btnInspectDesRounds">Trace 16 Ronde Feistel DES ($L_i, R_i, K_i$)</button>
+        </div>
+
+        <!-- AES Column -->
+        <div class="card glass-card engine-card engine-aes">
+          <div class="card-header">
+            <div class="engine-title-wrap">
+              <span class="engine-badge badge-aes">AES</span>
+              <h3>Advanced Encryption Standard</h3>
+            </div>
+            <span class="tag tag-success" id="aesStatus">Siap</span>
+          </div>
+
+          <div class="engine-spec-list">
+            <span><strong>Blok:</strong> 128-bit (16 B)</span>
+            <span><strong>Kunci:</strong> 128 / 256-bit</span>
+            <span><strong>Ronde:</strong> 10 / 14 SPN</span>
+            <span><strong>Mode:</strong> CBC / GCM Native</span>
+          </div>
+
+          <div class="output-group">
+            <div class="label-row">
+              <label>Ciphertext (Hexadecimal):</label>
+              <button class="btn-text" id="btnCopyAesHex">Salin</button>
+            </div>
+            <div class="output-box font-mono" id="aesCipherHex">-</div>
+          </div>
+
+          <div class="output-group">
+            <div class="label-row">
+              <label>Ciphertext (Base64):</label>
+              <button class="btn-text" id="btnCopyAesB64">Salin</button>
+            </div>
+            <div class="output-box font-mono" id="aesCipherB64">-</div>
+          </div>
+
+          <div class="output-group">
+            <label>Hasil Dekripsi:</label>
+            <div class="output-box font-mono highlight-box" id="aesDecryptedText">-</div>
+          </div>
+
+          <div class="engine-meta-row">
+            <div class="meta-item">
+              <span class="lbl">Waktu Eksekusi:</span>
+              <span class="val" id="aesTimeVal">0.0 ms</span>
+            </div>
+            <div class="meta-item">
+              <span class="lbl">Status Hasil:</span>
+              <span class="val" id="aesMatchVal">&mdash;</span>
+            </div>
+          </div>
+
+          <div class="hardware-accel-badge">
+            <span class="accel-dot"></span>
+            <span>Instruksi CPU AES-NI via Web Crypto API</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- DES 16-Rounds Inspector Modal / Drawer -->
+      <div class="inspector-drawer" id="desInspectorDrawer" style="display: none;">
+        <div class="card glass-card inspector-inner">
+          <div class="card-header">
+            <h4>Trace Detail 16 Ronde Feistel DES ($L_i, R_i$, dan Subkunci $K_i$)</h4>
+            <button class="btn-close" id="btnCloseDrawer">&times;</button>
+          </div>
+          <p class="subtext">Observasi langsung pembagian blok 64-bit menjadi kiri ($L$) &amp; kanan ($R$), ekspansi 48-bit, S-box S1..S8, dan permutasi P pada setiap ronde:</p>
+          <div class="table-responsive">
+            <table class="modern-table" id="desRoundsTable">
+              <thead>
+                <tr>
+                  <th>Ronde</th>
+                  <th>Subkunci $K_i$ (48-bit Hex)</th>
+                  <th>$L_i$ (32-bit Hex)</th>
+                  <th>$R_i$ (32-bit Hex)</th>
+                  <th>Fungsi $f(R_{i-1}, K_i)$</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 2: PERBANDINGAN PERFORMA & KEAMANAN -->
+    <!-- =================================================================== -->
+    <section id="tab-komparasi" class="tab-content">
+      <div class="section-heading">
+        <h2>Perbandingan DES vs AES</h2>
+        <p>Evaluasi empiris kecepatan komputasi, difusi bit, dan ketahanan ruang kunci.</p>
+      </div>
+
+      <!-- 1. Live Browser Benchmark -->
+      <div class="card glass-card">
+        <div class="card-header">
+          <h3>1. Benchmark Throughput (500 Iterasi Blok)</h3>
+          <span class="tag">Pengujian Nyata</span>
+        </div>
+        <p class="card-desc">
+          Waktu eksekusi enkripsi 500 iterasi blok data untuk membandingkan pemrosesan bitwise DES (software) dan instruksi AES-NI (hardware).
+        </p>
+
+        <div class="benchmark-controls">
+          <button class="btn btn-primary" id="btnRunBenchmark">Jalankan Benchmark</button>
+          <span class="bench-status" id="benchStatusText">Status: Siap diuji</span>
+        </div>
+
+        <div class="benchmark-results-grid">
+          <div class="bench-card des-bench">
+            <h4>DES (Data Encryption Standard)</h4>
+            <div class="bench-metric">
+              <span class="val" id="benchDesTime">&mdash;</span>
+              <span class="unit">ms total</span>
+            </div>
+            <div class="bench-ops">
+              <span id="benchDesOps">&mdash;</span> blok / detik
+            </div>
+            <div class="bench-bar-track">
+              <div class="bench-bar-fill bar-des" id="benchDesBar" style="width: 0%;"></div>
+            </div>
+            <p class="bench-note">Operasi permutasi bit per bit; tidak memiliki instruksi khusus CPU.</p>
+          </div>
+
+          <div class="bench-card aes-bench">
+            <h4>AES-128 (Advanced Encryption Standard)</h4>
+            <div class="bench-metric">
+              <span class="val" id="benchAesTime">&mdash;</span>
+              <span class="unit">ms total</span>
+            </div>
+            <div class="bench-ops">
+              <span id="benchAesOps">&mdash;</span> blok / detik
+            </div>
+            <div class="bench-bar-track">
+              <div class="bench-bar-fill bar-aes" id="benchAesBar" style="width: 0%;"></div>
+            </div>
+            <p class="bench-note">Operasi berbasis tabel/matriks byte; didukung akselerasi instruksi CPU AES-NI.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Side-by-Side Avalanche Effect Test -->
+      <div class="card glass-card">
+        <div class="card-header">
+          <h3>2. Pengujian Efek Avalanche (Pembalikan 1 Bit)</h3>
+          <span class="tag tag-warning">Difusi</span>
+        </div>
+        <p class="card-desc">
+          Membalik 1 bit pada karakter pertama plaintext ('C' &rarr; 'D'). Mengukur persentase bit ciphertext yang berubah (target difusi ideal: 40-60%).
+        </p>
+
+        <div class="avalanche-controls-row">
+          <input type="text" id="avalancheInputText" class="input-modern" value="ComputerSecurity2024" placeholder="Plaintext uji...">
+          <button class="btn btn-primary" id="btnRunDualAvalanche">Hitung Efek Avalanche</button>
+        </div>
+
+        <div class="grid-2col" style="margin-top: 1rem;">
+          <!-- DES Avalanche -->
+          <div class="avalanche-subcard">
+            <div class="subcard-title">Efek Avalanche DES (Blok 64-bit)</div>
+            <div class="av-metric-box">
+              <div class="av-percent" id="desAvPercent">0.0%</div>
+              <div class="av-detail">
+                <span id="desAvBits">0</span> dari 64 bit berubah
+              </div>
+              <div class="av-status" id="desAvStatus">&mdash;</div>
+            </div>
+            <div class="bit-mini-wrap">
+              <span class="bit-mini-label">Peta Bit Ciphertext 1 vs 2:</span>
+              <div class="bit-map-box font-mono" id="desDiffMap">-</div>
+            </div>
+          </div>
+
+          <!-- AES Avalanche -->
+          <div class="avalanche-subcard">
+            <div class="subcard-title">Efek Avalanche AES (Blok 128-bit)</div>
+            <div class="av-metric-box">
+              <div class="av-percent" id="aesAvPercent">0.0%</div>
+              <div class="av-detail">
+                <span id="aesAvBits">0</span> dari 128 bit berubah
+              </div>
+              <div class="av-status" id="aesAvStatus">&mdash;</div>
+            </div>
+            <div class="bit-mini-wrap">
+              <span class="bit-mini-label">Peta Bit Ciphertext 1 vs 2:</span>
+              <div class="bit-map-box font-mono" id="aesDiffMap">-</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 3. Brute Force & Security Table -->
+      <div class="card glass-card">
+        <div class="card-header">
+          <h3>3. Ketahanan Brute Force &amp; Perbandingan Karakteristik</h3>
+          <span class="tag tag-danger">Slide 8 &amp; 9</span>
+        </div>
+        <p class="card-desc">
+          Perbandingan ruang kunci teoritis dan catatan historis pencarian kunci berdasarkan standar NIST.
+        </p>
+
+        <div class="table-responsive">
+          <table class="modern-table">
+            <thead>
+              <tr>
+                <th>Aspek</th>
+                <th>DES (Data Encryption Standard)</th>
+                <th>AES (Advanced Encryption Standard)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Struktur Inti</strong></td>
+                <td>Feistel Network (16 ronde)</td>
+                <td>Substitution-Permutation Network / SPN (10, 12, 14 ronde)</td>
+              </tr>
+              <tr>
+                <td><strong>Ukuran Blok</strong></td>
+                <td>64-bit (8 byte)</td>
+                <td>128-bit (16 byte)</td>
+              </tr>
+              <tr>
+                <td><strong>Panjang Kunci</strong></td>
+                <td>56-bit efektif ($2^{56} \approx 7.2 \times 10^{16}$ kombinasi)</td>
+                <td>128, 192, atau 256-bit ($2^{128} \approx 3.4 \times 10^{38}$ kombinasi)</td>
+              </tr>
+              <tr>
+                <td><strong>Waktu Brute Force (EFF Deep Crack 1998)</strong></td>
+                <td><span class="tag-status danger">&lt; 3 Hari (56 Jam pada 1998)</span></td>
+                <td>Tidak memungkinkan</td>
+              </tr>
+              <tr>
+                <td><strong>Waktu Brute Force (Superkomputer Modern 10&sup1;&sup5; key/s)</strong></td>
+                <td><span class="tag-status danger">&lt; 0.08 Detik (Rentan)</span></td>
+                <td><span class="tag-status success">&gt; 10 Miliar Tahun</span></td>
+              </tr>
+              <tr>
+                <td><strong>Kecepatan Komputasi</strong></td>
+                <td>Lambat (3DES &plusmn;3&times; lebih lambat)</td>
+                <td>Cepat (didukung instruksi hardware CPU AES-NI)</td>
+              </tr>
+              <tr>
+                <td><strong>Status NIST</strong></td>
+                <td><span class="badge-deprecated">Dipensiunkan (2005)</span></td>
+                <td><span class="badge-secure">Standar FIPS 197 (2001 - sekarang)</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 3: MODE OPERASI & POLA DATA -->
+    <!-- =================================================================== -->
+    <section id="tab-mode" class="tab-content">
+      <div class="section-heading">
+        <h2>Mode Operasi Enkripsi</h2>
+        <p>Block cipher memproses data per blok tetap. Mode operasi mengatur bagaimana antar-blok dirangkai agar data panjang tetap aman.</p>
+      </div>
+
+      <div class="card glass-card">
+        <div class="card-header">
+          <h3>Pilih Mode Operasi</h3>
+          <span class="tag">Block Modes</span>
+        </div>
+
+        <div class="mode-selector">
+          <button class="mode-btn active" data-mode="ECB">ECB (Electronic Codebook)</button>
+          <button class="mode-btn" data-mode="CBC">CBC (Cipher Block Chaining)</button>
+          <button class="mode-btn" data-mode="CTR">CTR (Counter Mode)</button>
+          <button class="mode-btn" data-mode="GCM">GCM (Galois/Counter Mode)</button>
+        </div>
+
+        <div class="mode-detail-panel" id="modeDetailPanel"></div>
+
+        <!-- Pattern Leak Box -->
+        <div class="pattern-leak-box">
+          <div class="pattern-header">
+            <h4>Pemeriksaan Pola Blok Berulang: ECB vs CBC</h4>
+            <span class="badge-mini">Uji Pola</span>
+          </div>
+          <p class="subtext">
+            Kelemahan ECB: blok plaintext yang identik menghasilkan ciphertext identik. Masukkan teks berulang untuk melihat perbandingannya dengan CBC:
+          </p>
+          <div class="pattern-inputs">
+            <input type="text" id="patternInput" class="input-modern" value="HELLODESHELLODESHELLODES12345678" placeholder="Masukkan teks berulang...">
+            <button class="btn btn-primary" id="btnRunPatternDemo">Uji Pola Blok</button>
+          </div>
+          <div class="pattern-visual-results" id="patternResults"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 4: ARSITEKTUR & SKRIP TOOLS -->
+    <!-- =================================================================== -->
+    <section id="tab-arsitektur" class="tab-content">
+      <div class="section-heading">
+        <h2>Arsitektur Algoritma &amp; Skrip Praktik Lapangan</h2>
+        <p>Detail arsitektur Feistel (DES) vs SPN (AES) serta skrip eksekusi menggunakan Python dan OpenSSL CLI.</p>
+      </div>
+
+      <div class="grid-2col">
+        <!-- Feistel DES -->
+        <div class="card glass-card">
+          <div class="card-header">
+            <h3>Struktur Feistel 16-Ronde (DES)</h3>
+            <span class="tag tag-warning">Feistel Network</span>
+          </div>
+          <div class="feistel-diagram-interactive">
+            <div class="feistel-step-card">
+              <div class="step-badge">1. Initial Permutation (IP)</div>
+              <p>64-bit data dipermutasi bitnya via tabel IP, kemudian dibagi dua bagian: $L_0$ (32-bit) dan $R_0$ (32-bit).</p>
+            </div>
+            <div class="feistel-step-card">
+              <div class="step-badge">2. Inti Ronde Feistel</div>
+              <div class="feistel-formula">
+                <div>$L_i = R_{i-1}$</div>
+                <div>$R_i = L_{i-1} \oplus f(R_{i-1}, K_i)$</div>
+              </div>
+              <p class="subtext">Fungsi $f(R, K)$ melibatkan: Ekspansi $E$ (32&rarr;48 bit), XOR subkunci $K_i$, 8 S-box (S1..S8 reduksi 48&rarr;32 bit), dan Permutasi $P$.</p>
+            </div>
+            <div class="feistel-step-card">
+              <div class="step-badge">3. Key Schedule DES</div>
+              <p>Kunci 64-bit &rarr; PC-1 (56-bit) &rarr; $C_0, D_0$ (28-bit) &rarr; Left Shift &rarr; PC-2 menghasilkan 16 subkunci 48-bit ($K_1 \dots K_{16}$).</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- SPN AES -->
+        <div class="card glass-card">
+          <div class="card-header">
+            <h3>Struktur SPN State Matrix $4 \times 4$ (AES)</h3>
+            <span class="tag tag-success">SPN Network</span>
+          </div>
+          <div class="state-matrix-box">
+            <div class="aes-steps-nav">
+              <button class="step-btn active" data-step="subbytes">1. SubBytes</button>
+              <button class="step-btn" data-step="shiftrows">2. ShiftRows</button>
+              <button class="step-btn" data-step="mixcolumns">3. MixColumns</button>
+              <button class="step-btn" data-step="addroundkey">4. AddRoundKey</button>
+            </div>
+
+            <div class="matrix-simulation-view">
+              <div class="matrix-wrap">
+                <span class="matrix-label">State Matrix 4&times;4 Byte</span>
+                <div class="matrix-grid" id="aesMatrixGrid"></div>
+              </div>
+              <div class="matrix-explanation" id="matrixExplanation"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Skrip Python & CLI -->
+      <div class="card glass-card">
+        <div class="card-header">
+          <h3>Skrip Praktik Eksekusi (Python &amp; OpenSSL CLI)</h3>
+          <span class="tag">Implementation Code</span>
+        </div>
+        <div class="scripts-grid">
+          <div class="code-card">
+            <div class="code-card-header">Python 3 (Library <code>cryptography</code>)</div>
+            <pre class="code-snippet font-mono"><code>from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+import os
+
+# Enkripsi AES-256-GCM (Standar Modern)
+key = os.urandom(32)  # 256-bit key
+iv = os.urandom(12)   # 96-bit nonce
+encryptor = Cipher(algorithms.AES(key), modes.GCM(iv)).encryptor()
+ciphertext = encryptor.update(b"Pesan Rahasia Siber") + encryptor.finalize()
+tag = encryptor.tag
+
+print("Ciphertext:", ciphertext.hex())
+print("Auth Tag:", tag.hex())</code></pre>
+          </div>
+
+          <div class="code-card">
+            <div class="code-card-header">OpenSSL CLI Commands</div>
+            <pre class="code-snippet font-mono"><code># 1. Enkripsi AES-256-CBC dengan PBKDF2
+openssl enc -aes-256-cbc -salt -pbkdf2 \
+  -in data.txt -out data.enc -k KunciRahasiaKu
+
+# 2. Dekripsi AES-256-CBC
+openssl enc -d -aes-256-cbc -pbkdf2 \
+  -in data.enc -out data_pulih.txt -k KunciRahasiaKu
+
+# 3. Enkripsi DES (Legacy - Hanya untuk uji lab)
+openssl enc -des-cbc -in data.txt -out data.des -k SandiLama</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="main-footer">
+      <p><strong>KELOMPOK 1 &bull; Kriptografi Simetris (DES &amp; AES)</strong> &mdash; Teknologi Keamanan Siber Pertemuan 7</p>
+    </footer>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
