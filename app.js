@@ -1,6 +1,6 @@
 /**
  * Kriptografi Simetris (DES & AES) - Kelompok 1
- * Script: Dual-Engine Lab (Side-by-Side), Head-to-Head Comparison & Mode Analysis
+ * Script: Terpisah untuk Praktik DES, Praktik AES, Perbandingan Komparatif, dan Evaluasi Mode
  */
 
 (function () {
@@ -93,15 +93,6 @@
     return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('').toUpperCase();
   }
 
-  function hexToBytes(hex) {
-    const clean = hex.replace(/[^0-9a-fA-F]/g, '');
-    const bytes = new Uint8Array(Math.floor(clean.length / 2));
-    for (let i = 0; i < bytes.length; i++) {
-      bytes[i] = parseInt(clean.substr(i * 2, 2), 16);
-    }
-    return bytes;
-  }
-
   function strToUtf8(str) { return new TextEncoder().encode(str); }
   function utf8ToStr(bytes) { return new TextDecoder('utf-8', { fatal: false }).decode(bytes); }
 
@@ -109,13 +100,6 @@
     let bin = '';
     for (let i = 0; i < bytes.byteLength; i++) bin += String.fromCharCode(bytes[i]);
     return btoa(bin);
-  }
-
-  function base64ToBytes(b64) {
-    const bin = atob(b64);
-    const bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    return bytes;
   }
 
   function desGenerateSubkeys(key8Bytes) {
@@ -267,7 +251,6 @@
     return new Uint8Array(plainBuffer);
   }
 
-  // Helpers to normalize keys & IVs
   function deriveKey(str, length) {
     const raw = strToUtf8(str);
     const out = new Uint8Array(length);
@@ -292,6 +275,15 @@
     return bytesToHex(arr);
   }
 
+  function copyText(el, btn, orig) {
+    const txt = el.textContent;
+    if (txt && txt !== '-') {
+      navigator.clipboard.writeText(txt);
+      btn.textContent = "Tersalin!";
+      setTimeout(() => { btn.textContent = orig; }, 1500);
+    }
+  }
+
   // =========================================================================
   // 3. UI TABS CONTROLLER
   // =========================================================================
@@ -309,220 +301,139 @@
   });
 
   // =========================================================================
-  // 4. TAB 1: DUAL-LAB SIDE-BY-SIDE CONTROLLER
+  // 4. TAB 1: PRAKTIK DES CONTROLLER
   // =========================================================================
-  const inputPlaintext = document.getElementById('inputPlaintext');
-  const plainCharCount = document.getElementById('plainCharCount');
-  const secretKey = document.getElementById('secretKey');
-  const inputIV = document.getElementById('inputIV');
-  const btnRunBoth = document.getElementById('btnRunBoth');
-  const btnDecryptBoth = document.getElementById('btnDecryptBoth');
-  const btnPreset1 = document.getElementById('btnPreset1');
-  const btnPreset2 = document.getElementById('btnPreset2');
-  const btnRandomKey = document.getElementById('btnRandomKey');
-  const btnRandomIV = document.getElementById('btnRandomIV');
+  const desModeSelect = document.getElementById('desModeSelect');
+  const desPlaintext = document.getElementById('desPlaintext');
+  const desCharCount = document.getElementById('desCharCount');
+  const desKey = document.getElementById('desKey');
+  const desIV = document.getElementById('desIV');
+  const desIvGroup = document.getElementById('desIvGroup');
+  const btnRandomDesKey = document.getElementById('btnRandomDesKey');
+  const btnRandomDesIV = document.getElementById('btnRandomDesIV');
+  const btnDesPreset = document.getElementById('btnDesPreset');
+  const btnRunDesEncrypt = document.getElementById('btnRunDesEncrypt');
+  const btnRunDesDecrypt = document.getElementById('btnRunDesDecrypt');
 
-  // DES Output Elements
-  const desStatus = document.getElementById('desStatus');
-  const desCipherHex = document.getElementById('desCipherHex');
-  const desCipherB64 = document.getElementById('desCipherB64');
-  const desDecryptedText = document.getElementById('desDecryptedText');
-  const desTimeVal = document.getElementById('desTimeVal');
-  const desMatchVal = document.getElementById('desMatchVal');
+  const desStatusTag = document.getElementById('desStatusTag');
+  const desCipherHexOutput = document.getElementById('desCipherHexOutput');
+  const desCipherB64Output = document.getElementById('desCipherB64Output');
+  const desDecryptedOutput = document.getElementById('desDecryptedOutput');
+  const desExecTime = document.getElementById('desExecTime');
+  const desIntegrityStatus = document.getElementById('desIntegrityStatus');
   const btnCopyDesHex = document.getElementById('btnCopyDesHex');
   const btnCopyDesB64 = document.getElementById('btnCopyDesB64');
 
-  // AES Output Elements
-  const aesStatus = document.getElementById('aesStatus');
-  const aesCipherHex = document.getElementById('aesCipherHex');
-  const aesCipherB64 = document.getElementById('aesCipherB64');
-  const aesDecryptedText = document.getElementById('aesDecryptedText');
-  const aesTimeVal = document.getElementById('aesTimeVal');
-  const aesMatchVal = document.getElementById('aesMatchVal');
-  const btnCopyAesHex = document.getElementById('btnCopyAesHex');
-  const btnCopyAesB64 = document.getElementById('btnCopyAesB64');
-
-  // Drawer
-  const btnInspectDesRounds = document.getElementById('btnInspectDesRounds');
+  const btnOpenDesTrace = document.getElementById('btnOpenDesTrace');
   const desInspectorDrawer = document.getElementById('desInspectorDrawer');
   const btnCloseDrawer = document.getElementById('btnCloseDrawer');
   const desRoundsTableBody = document.querySelector('#desRoundsTable tbody');
 
-  // State
-  let lastDesCipherBytes = null;
-  let lastAesCipherBytes = null;
-  let lastEncryptedPlaintext = "";
+  let currentDesCipherBytes = null;
+  let currentDesPlain = "";
 
-  inputPlaintext.addEventListener('input', () => {
-    plainCharCount.textContent = `${inputPlaintext.value.length} karakter`;
+  desPlaintext.addEventListener('input', () => {
+    desCharCount.textContent = `${desPlaintext.value.length} karakter`;
   });
 
-  btnPreset1.addEventListener('click', () => {
-    inputPlaintext.value = "Kriptografi Simetris Pertemuan 7";
-    plainCharCount.textContent = `${inputPlaintext.value.length} karakter`;
-    secretKey.value = "KunciRahasiaSiber1";
-    runDualEncryption();
+  desModeSelect.addEventListener('change', () => {
+    if (desModeSelect.value === 'ECB') {
+      desIvGroup.style.display = 'none';
+    } else {
+      desIvGroup.style.display = 'flex';
+    }
   });
 
-  btnPreset2.addEventListener('click', () => {
-    inputPlaintext.value = "Algoritma DES memproses blok 64-bit dengan 16 ronde Feistel. AES memproses blok 128-bit dengan Substitution-Permutation Network dan dukungan hardware AES-NI.";
-    plainCharCount.textContent = `${inputPlaintext.value.length} karakter`;
-    secretKey.value = "SuperSecretMasterKey2024Secure";
-    runDualEncryption();
+  btnRandomDesKey.addEventListener('click', () => {
+    desKey.value = getRandomHexString(8);
   });
 
-  btnRandomKey.addEventListener('click', () => {
-    secretKey.value = getRandomHexString(16);
+  btnRandomDesIV.addEventListener('click', () => {
+    desIV.value = getRandomHexString(8);
   });
 
-  btnRandomIV.addEventListener('click', () => {
-    inputIV.value = getRandomHexString(16);
+  btnDesPreset.addEventListener('click', () => {
+    desPlaintext.value = "Sistem Keamanan Siber Pertemuan 7";
+    desCharCount.textContent = `${desPlaintext.value.length} karakter`;
+    desKey.value = "KunciDES";
+    desIV.value = "12345678";
+    runDesEncryption();
   });
 
-  async function runDualEncryption() {
-    const plain = inputPlaintext.value.trim();
+  function runDesEncryption() {
+    const plain = desPlaintext.value.trim();
     if (!plain) {
-      alert("Masukkan plaintext terlebih dahulu!");
+      alert("Masukkan plaintext DES terlebih dahulu!");
       return;
     }
-    lastEncryptedPlaintext = plain;
+    currentDesPlain = plain;
     const plainBytes = strToUtf8(plain);
+    const keyBytes = deriveKey(desKey.value, 8);
+    const mode = desModeSelect.value;
+    const ivBytes = mode === 'CBC' ? deriveIV(desIV.value, 8) : null;
 
-    const keyStr = secretKey.value;
-    const ivStr = inputIV.value;
-
-    // 1. DES Encryption
     try {
-      const desKeyBytes = deriveKey(keyStr, 8);
-      const desIvBytes = deriveIV(ivStr, 8);
       const t0 = performance.now();
-      const desCipher = desEncrypt(plainBytes, desKeyBytes, 'CBC', desIvBytes);
+      const cipher = desEncrypt(plainBytes, keyBytes, mode, ivBytes);
       const t1 = performance.now();
 
-      lastDesCipherBytes = desCipher;
-      desCipherHex.textContent = bytesToHex(desCipher);
-      desCipherB64.textContent = bytesToBase64(desCipher);
-      desTimeVal.textContent = `${(t1 - t0).toFixed(2)} ms`;
-      desStatus.textContent = "Terenkripsi (CBC)";
-      desStatus.className = "tag tag-warning";
-      desDecryptedText.textContent = "-";
-      desMatchVal.textContent = "Menunggu Dekripsi";
-      desMatchVal.style.color = "var(--text-dim)";
+      currentDesCipherBytes = cipher;
+      desCipherHexOutput.textContent = bytesToHex(cipher);
+      desCipherB64Output.textContent = bytesToBase64(cipher);
+      desExecTime.textContent = `${(t1 - t0).toFixed(2)} ms`;
+      desStatusTag.textContent = `Terenkripsi (${mode})`;
+      desStatusTag.className = "tag tag-warning";
+      desDecryptedOutput.textContent = "-";
+      desIntegrityStatus.textContent = "Menunggu Dekripsi";
+      desIntegrityStatus.style.color = "var(--text-dim)";
     } catch (e) {
       console.error(e);
-      desStatus.textContent = "Error";
-      desStatus.className = "tag tag-danger";
-    }
-
-    // 2. AES-128-CBC Encryption
-    try {
-      const aesKeyBytes = deriveKey(keyStr, 16); // 128-bit key
-      const aesIvBytes = deriveIV(ivStr, 16);  // 128-bit IV
-      const t0 = performance.now();
-      const aesCipher = await aesEncrypt(plainBytes, aesKeyBytes, "AES-CBC", aesIvBytes);
-      const t1 = performance.now();
-
-      lastAesCipherBytes = aesCipher;
-      aesCipherHex.textContent = bytesToHex(aesCipher);
-      aesCipherB64.textContent = bytesToBase64(aesCipher);
-      aesTimeVal.textContent = `${(t1 - t0).toFixed(2)} ms`;
-      aesStatus.textContent = "Terenkripsi (FIPS 197)";
-      aesStatus.className = "tag tag-success";
-      aesDecryptedText.textContent = "-";
-      aesMatchVal.textContent = "Menunggu Dekripsi";
-      aesMatchVal.style.color = "var(--text-dim)";
-    } catch (e) {
-      console.error(e);
-      aesStatus.textContent = "Error";
-      aesStatus.className = "tag tag-danger";
+      desStatusTag.textContent = "Error";
+      desStatusTag.className = "tag tag-danger";
     }
   }
 
-  async function runDualDecryption() {
-    if (!lastDesCipherBytes || !lastAesCipherBytes) {
-      await runDualEncryption();
+  function runDesDecryption() {
+    if (!currentDesCipherBytes) {
+      runDesEncryption();
     }
+    const keyBytes = deriveKey(desKey.value, 8);
+    const mode = desModeSelect.value;
+    const ivBytes = mode === 'CBC' ? deriveIV(desIV.value, 8) : null;
 
-    const keyStr = secretKey.value;
-    const ivStr = inputIV.value;
-
-    // 1. DES Decrypt
     try {
-      const desKeyBytes = deriveKey(keyStr, 8);
-      const desIvBytes = deriveIV(ivStr, 8);
       const t0 = performance.now();
-      const desPlainBytes = desDecrypt(lastDesCipherBytes, desKeyBytes, 'CBC', desIvBytes);
+      const plainBytes = desDecrypt(currentDesCipherBytes, keyBytes, mode, ivBytes);
       const t1 = performance.now();
 
-      const desText = utf8ToStr(desPlainBytes);
-      desDecryptedText.textContent = desText;
-      desTimeVal.textContent = `${(t1 - t0).toFixed(2)} ms (Dekripsi)`;
+      const text = utf8ToStr(plainBytes);
+      desDecryptedOutput.textContent = text;
+      desExecTime.textContent = `${(t1 - t0).toFixed(2)} ms (Dekripsi)`;
 
-      if (desText === lastEncryptedPlaintext) {
-        desMatchVal.textContent = "Cocok (identik)";
-        desMatchVal.style.color = "var(--accent-green)";
-        desStatus.textContent = "Dekripsi berhasil";
-        desStatus.className = "tag tag-success";
+      if (text === currentDesPlain) {
+        desIntegrityStatus.textContent = "Cocok (identik)";
+        desIntegrityStatus.style.color = "var(--accent-green)";
+        desStatusTag.textContent = "Dekripsi berhasil";
+        desStatusTag.className = "tag tag-success";
       } else {
-        desMatchVal.textContent = "Tidak cocok";
-        desMatchVal.style.color = "var(--accent-red)";
+        desIntegrityStatus.textContent = "Tidak cocok";
+        desIntegrityStatus.style.color = "var(--accent-red)";
       }
     } catch (e) {
       console.error(e);
-      desDecryptedText.textContent = "[Error dekripsi DES]";
-      desMatchVal.textContent = "Gagal";
-      desMatchVal.style.color = "var(--accent-red)";
-    }
-
-    // 2. AES Decrypt
-    try {
-      const aesKeyBytes = deriveKey(keyStr, 16);
-      const aesIvBytes = deriveIV(ivStr, 16);
-      const t0 = performance.now();
-      const aesPlainBytes = await aesDecrypt(lastAesCipherBytes, aesKeyBytes, "AES-CBC", aesIvBytes);
-      const t1 = performance.now();
-
-      const aesText = utf8ToStr(aesPlainBytes);
-      aesDecryptedText.textContent = aesText;
-      aesTimeVal.textContent = `${(t1 - t0).toFixed(2)} ms (Dekripsi)`;
-
-      if (aesText === lastEncryptedPlaintext) {
-        aesMatchVal.textContent = "Cocok (identik)";
-        aesMatchVal.style.color = "var(--accent-green)";
-        aesStatus.textContent = "Dekripsi berhasil";
-        aesStatus.className = "tag tag-success";
-      } else {
-        aesMatchVal.textContent = "Tidak cocok";
-        aesMatchVal.style.color = "var(--accent-red)";
-      }
-    } catch (e) {
-      console.error(e);
-      aesDecryptedText.textContent = "[Error dekripsi AES]";
-      aesMatchVal.textContent = "Gagal";
-      aesMatchVal.style.color = "var(--accent-red)";
+      desDecryptedOutput.textContent = "[Error dekripsi DES: kunci atau IV salah]";
+      desIntegrityStatus.textContent = "Gagal";
+      desIntegrityStatus.style.color = "var(--accent-red)";
     }
   }
 
-  btnRunBoth.addEventListener('click', runDualEncryption);
-  btnDecryptBoth.addEventListener('click', runDualDecryption);
+  btnRunDesEncrypt.addEventListener('click', runDesEncryption);
+  btnRunDesDecrypt.addEventListener('click', runDesDecryption);
 
-  // Copy buttons
-  function copyText(el, btn, orig) {
-    const txt = el.textContent;
-    if (txt && txt !== '-') {
-      navigator.clipboard.writeText(txt);
-      btn.textContent = "Tersalin!";
-      setTimeout(() => { btn.textContent = orig; }, 1500);
-    }
-  }
+  btnCopyDesHex.addEventListener('click', () => copyText(desCipherHexOutput, btnCopyDesHex, "Salin Hex"));
+  btnCopyDesB64.addEventListener('click', () => copyText(desCipherB64Output, btnCopyDesB64, "Salin Base64"));
 
-  btnCopyDesHex.addEventListener('click', () => copyText(desCipherHex, btnCopyDesHex, "Salin"));
-  btnCopyDesB64.addEventListener('click', () => copyText(desCipherB64, btnCopyDesB64, "Salin"));
-  btnCopyAesHex.addEventListener('click', () => copyText(aesCipherHex, btnCopyAesHex, "Salin"));
-  btnCopyAesB64.addEventListener('click', () => copyText(aesCipherB64, btnCopyAesB64, "Salin"));
-
-  // Trace Drawer
-  btnInspectDesRounds.addEventListener('click', () => {
+  btnOpenDesTrace.addEventListener('click', () => {
     if (!lastDesTrace || lastDesTrace.length === 0) {
       alert("Enkripsi teks terlebih dahulu untuk merekam 16 ronde!");
       return;
@@ -547,7 +458,184 @@
   });
 
   // =========================================================================
-  // 5. TAB 2: PERBANDINGAN PERFORMA & AVALANCHE (HEAD-TO-HEAD)
+  // 5. TAB 2: PRAKTIK AES CONTROLLER
+  // =========================================================================
+  const aesAlgorithmSelect = document.getElementById('aesAlgorithmSelect');
+  const aesPlaintext = document.getElementById('aesPlaintext');
+  const aesCharCount = document.getElementById('aesCharCount');
+  const aesKey = document.getElementById('aesKey');
+  const aesKeyHelper = document.getElementById('aesKeyHelper');
+  const aesIV = document.getElementById('aesIV');
+  const aesIvHelper = document.getElementById('aesIvHelper');
+  const btnRandomAesKey = document.getElementById('btnRandomAesKey');
+  const btnRandomAesIV = document.getElementById('btnRandomAesIV');
+  const btnAesPreset = document.getElementById('btnAesPreset');
+  const btnRunAesEncrypt = document.getElementById('btnRunAesEncrypt');
+  const btnRunAesDecrypt = document.getElementById('btnRunAesDecrypt');
+
+  const aesStatusTag = document.getElementById('aesStatusTag');
+  const aesCipherHexOutput = document.getElementById('aesCipherHexOutput');
+  const aesCipherB64Output = document.getElementById('aesCipherB64Output');
+  const aesTagRow = document.getElementById('aesTagRow');
+  const aesTagOutput = document.getElementById('aesTagOutput');
+  const aesDecryptedOutput = document.getElementById('aesDecryptedOutput');
+  const aesExecTime = document.getElementById('aesExecTime');
+  const aesIntegrityStatus = document.getElementById('aesIntegrityStatus');
+  const btnCopyAesHex = document.getElementById('btnCopyAesHex');
+  const btnCopyAesB64 = document.getElementById('btnCopyAesB64');
+
+  let currentAesCipherBytes = null;
+  let currentAesPlain = "";
+
+  aesPlaintext.addEventListener('input', () => {
+    aesCharCount.textContent = `${aesPlaintext.value.length} karakter`;
+  });
+
+  aesAlgorithmSelect.addEventListener('change', () => {
+    const val = aesAlgorithmSelect.value;
+    const is256 = val.includes('256');
+    const isGCM = val.includes('GCM');
+
+    if (is256) {
+      aesKeyHelper.textContent = "Kunci dinormalisasi menjadi 32 byte (256-bit).";
+    } else {
+      aesKeyHelper.textContent = "Kunci dinormalisasi menjadi 16 byte (128-bit).";
+    }
+
+    if (isGCM) {
+      aesIvHelper.textContent = "Standar IV/Nonce GCM adalah 12 byte (96-bit).";
+      aesTagRow.style.display = 'flex';
+    } else {
+      aesIvHelper.textContent = "IV untuk CBC/CTR adalah 16 byte (128-bit).";
+      aesTagRow.style.display = 'none';
+    }
+  });
+
+  btnRandomAesKey.addEventListener('click', () => {
+    const is256 = aesAlgorithmSelect.value.includes('256');
+    aesKey.value = getRandomHexString(is256 ? 32 : 16);
+  });
+
+  btnRandomAesIV.addEventListener('click', () => {
+    const isGCM = aesAlgorithmSelect.value.includes('GCM');
+    aesIV.value = getRandomHexString(isGCM ? 12 : 16);
+  });
+
+  btnAesPreset.addEventListener('click', () => {
+    aesPlaintext.value = "Kriptografi Simetris Pertemuan 7";
+    aesCharCount.textContent = `${aesPlaintext.value.length} karakter`;
+    aesKey.value = "KunciRahasiaAES128BitKey";
+    aesIV.value = "1234567890abcdef";
+    runAesEncryption();
+  });
+
+  async function runAesEncryption() {
+    const plain = aesPlaintext.value.trim();
+    if (!plain) {
+      alert("Masukkan plaintext AES terlebih dahulu!");
+      return;
+    }
+    currentAesPlain = plain;
+    const plainBytes = strToUtf8(plain);
+
+    const val = aesAlgorithmSelect.value;
+    const is256 = val.includes('256');
+    const isGCM = val.includes('GCM');
+    const isCTR = val.includes('CTR');
+
+    const keyLen = is256 ? 32 : 16;
+    const ivLen = isGCM ? 12 : 16;
+
+    const keyBytes = deriveKey(aesKey.value, keyLen);
+    const ivBytes = deriveIV(aesIV.value, ivLen);
+
+    let algoName = "AES-CBC";
+    if (isGCM) algoName = "AES-GCM";
+    if (isCTR) algoName = "AES-CTR";
+
+    try {
+      const t0 = performance.now();
+      const cipher = await aesEncrypt(plainBytes, keyBytes, algoName, ivBytes);
+      const t1 = performance.now();
+
+      currentAesCipherBytes = cipher;
+      aesCipherHexOutput.textContent = bytesToHex(cipher);
+      aesCipherB64Output.textContent = bytesToBase64(cipher);
+
+      if (isGCM) {
+        const tag = cipher.slice(-16);
+        aesTagOutput.textContent = bytesToHex(tag);
+        aesTagRow.style.display = 'flex';
+      } else {
+        aesTagRow.style.display = 'none';
+      }
+
+      aesExecTime.textContent = `${(t1 - t0).toFixed(2)} ms`;
+      aesStatusTag.textContent = `Terenkripsi (${val})`;
+      aesStatusTag.className = "tag tag-success";
+      aesDecryptedOutput.textContent = "-";
+      aesIntegrityStatus.textContent = "Menunggu Dekripsi";
+      aesIntegrityStatus.style.color = "var(--text-dim)";
+    } catch (e) {
+      console.error(e);
+      aesStatusTag.textContent = "Error";
+      aesStatusTag.className = "tag tag-danger";
+    }
+  }
+
+  async function runAesDecryption() {
+    if (!currentAesCipherBytes) {
+      await runAesEncryption();
+    }
+    const val = aesAlgorithmSelect.value;
+    const is256 = val.includes('256');
+    const isGCM = val.includes('GCM');
+    const isCTR = val.includes('CTR');
+
+    const keyLen = is256 ? 32 : 16;
+    const ivLen = isGCM ? 12 : 16;
+
+    const keyBytes = deriveKey(aesKey.value, keyLen);
+    const ivBytes = deriveIV(aesIV.value, ivLen);
+
+    let algoName = "AES-CBC";
+    if (isGCM) algoName = "AES-GCM";
+    if (isCTR) algoName = "AES-CTR";
+
+    try {
+      const t0 = performance.now();
+      const plainBytes = await aesDecrypt(currentAesCipherBytes, keyBytes, algoName, ivBytes);
+      const t1 = performance.now();
+
+      const text = utf8ToStr(plainBytes);
+      aesDecryptedOutput.textContent = text;
+      aesExecTime.textContent = `${(t1 - t0).toFixed(2)} ms (Dekripsi)`;
+
+      if (text === currentAesPlain) {
+        aesIntegrityStatus.textContent = "Cocok (identik)";
+        aesIntegrityStatus.style.color = "var(--accent-green)";
+        aesStatusTag.textContent = "Dekripsi berhasil";
+        aesStatusTag.className = "tag tag-success";
+      } else {
+        aesIntegrityStatus.textContent = "Tidak cocok";
+        aesIntegrityStatus.style.color = "var(--accent-red)";
+      }
+    } catch (e) {
+      console.error(e);
+      aesDecryptedOutput.textContent = "[Error dekripsi AES: kunci, IV, atau tag tidak valid]";
+      aesIntegrityStatus.textContent = "Gagal";
+      aesIntegrityStatus.style.color = "var(--accent-red)";
+    }
+  }
+
+  btnRunAesEncrypt.addEventListener('click', runAesEncryption);
+  btnRunAesDecrypt.addEventListener('click', runAesDecryption);
+
+  btnCopyAesHex.addEventListener('click', () => copyText(aesCipherHexOutput, btnCopyAesHex, "Salin Hex"));
+  btnCopyAesB64.addEventListener('click', () => copyText(aesCipherB64Output, btnCopyAesB64, "Salin Base64"));
+
+  // =========================================================================
+  // 6. TAB 3: PERBANDINGAN PERFORMA & AVALANCHE (HEAD-TO-HEAD)
   // =========================================================================
   const btnRunBenchmark = document.getElementById('btnRunBenchmark');
   const benchStatusText = document.getElementById('benchStatusText');
@@ -564,9 +652,9 @@
 
     const block8 = new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8]);
     const block16 = new Uint8Array([1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16]);
-    const desKey = new Uint8Array([0x13, 0x34, 0x57, 0x79, 0x9B, 0xBC, 0xDF, 0xF1]);
-    const aesKey = new Uint8Array(16).fill(0x33);
-    const subkeys = desGenerateSubkeys(desKey);
+    const desKeyBytes = new Uint8Array([0x13, 0x34, 0x57, 0x79, 0x9B, 0xBC, 0xDF, 0xF1]);
+    const aesKeyBytes = new Uint8Array(16).fill(0x33);
+    const subkeys = desGenerateSubkeys(desKeyBytes);
     const iterations = 500;
 
     // Benchmark DES
@@ -584,7 +672,7 @@
 
     // Benchmark AES
     await new Promise(r => setTimeout(r, 40));
-    const cryptoKey = await importAesKey(aesKey, "AES-CBC");
+    const cryptoKey = await importAesKey(aesKeyBytes, "AES-CBC");
     const iv = new Uint8Array(16);
 
     const tAes0 = performance.now();
@@ -631,9 +719,9 @@
     const keyStr = "KunciSiber2024";
 
     // 1. DES Avalanche
-    const desKey = deriveKey(keyStr, 8);
-    const desC1 = desEncrypt(bytes1, desKey, 'ECB');
-    const desC2 = desEncrypt(bytes2, desKey, 'ECB');
+    const desKeyBytes = deriveKey(keyStr, 8);
+    const desC1 = desEncrypt(bytes1, desKeyBytes, 'ECB');
+    const desC2 = desEncrypt(bytes2, desKeyBytes, 'ECB');
 
     const desBits1 = bytesToBits(desC1);
     const desBits2 = bytesToBits(desC2);
@@ -655,10 +743,10 @@
     desDiffMap.textContent = desMap;
 
     // 2. AES Avalanche
-    const aesKey = deriveKey(keyStr, 16);
+    const aesKeyBytes = deriveKey(keyStr, 16);
     const iv = new Uint8Array(16);
-    const aesC1 = await aesEncrypt(bytes1, aesKey, "AES-CBC", iv);
-    const aesC2 = await aesEncrypt(bytes2, aesKey, "AES-CBC", iv);
+    const aesC1 = await aesEncrypt(bytes1, aesKeyBytes, "AES-CBC", iv);
+    const aesC2 = await aesEncrypt(bytes2, aesKeyBytes, "AES-CBC", iv);
 
     const aesBits1 = bytesToBits(aesC1);
     const aesBits2 = bytesToBits(aesC2);
@@ -683,7 +771,7 @@
   btnRunDualAvalanche.addEventListener('click', runDualAvalancheTest);
 
   // =========================================================================
-  // 6. TAB 3: MODE OPERASI & PATTERN LEAK DEMO
+  // 7. TAB 4: MODE OPERASI & PATTERN LEAK DEMO
   // =========================================================================
   const modeDetailPanel = document.getElementById('modeDetailPanel');
   const modeButtons = document.querySelectorAll('.mode-btn');
@@ -766,11 +854,11 @@
   function runPatternLeak() {
     const text = patternInput.value || "HELLODESHELLODES";
     const bytes = strToUtf8(text);
-    const key = strToUtf8("DEMOKEY1");
-    const iv = strToUtf8("INITVEC1");
+    const keyBytes = strToUtf8("DEMOKEY1");
+    const ivBytes = strToUtf8("INITVEC1");
 
-    const ecbCipher = desEncrypt(bytes, key, 'ECB', null);
-    const cbcCipher = desEncrypt(bytes, key, 'CBC', iv);
+    const ecbCipher = desEncrypt(bytes, keyBytes, 'ECB', null);
+    const cbcCipher = desEncrypt(bytes, keyBytes, 'CBC', ivBytes);
 
     const ecbBlocks = [];
     const cbcBlocks = [];
@@ -822,51 +910,9 @@
 
   btnRunPatternDemo.addEventListener('click', runPatternLeak);
 
-  // =========================================================================
-  // 7. TAB 4: ARSITEKTUR AES (STATE MATRIX VISUALIZER)
-  // =========================================================================
-  const aesMatrixGrid = document.getElementById('aesMatrixGrid');
-  const matrixExplanation = document.getElementById('matrixExplanation');
-  const stepBtns = document.querySelectorAll('.step-btn');
-
-  const subBytesMatrix = [["23","c4","c7","e1"],["1a","be","c7","9a"],["42","04","46","c5"],["c2","5d","3a","18"]];
-  const shiftRowsMatrix = [["23","c4","c7","e1"],["be","c7","9a","1a"],["46","c5","42","04"],["18","c2","5d","3a"]];
-  const mixColumnsMatrix = [["ba","84","e8","1b"],["75","a4","8d","40"],["f4","8d","06","7d"],["2c","58","66","23"]];
-  const addRoundKeyMatrix = [["d4","27","11","ae"],["e0","bf","98","f1"],["b8","b4","5d","e5"],["1e","41","52","30"]];
-
-  const STEP_DETAILS = {
-    subbytes: { matrix: subBytesMatrix, title: "1. SubBytes", desc: "Substitusi byte non-linear menggunakan tabel S-Box GF(2^8). Menghasilkan efek Confusion." },
-    shiftrows: { matrix: shiftRowsMatrix, title: "2. ShiftRows", desc: "Pergeseran siklis byte baris ke-0 (0), baris ke-1 (1 byte), baris ke-2 (2 byte), dan baris ke-3 (3 byte)." },
-    mixcolumns: { matrix: mixColumnsMatrix, title: "3. MixColumns", desc: "Perkalian matriks linear tiap kolom di bidang GF(2^8). Menghasilkan efek Diffusion menyeluruh." },
-    addroundkey: { matrix: addRoundKeyMatrix, title: "4. AddRoundKey", desc: "Penyuntikan subkunci ronde ke State Matrix dengan operasi XOR bit demi bit." }
-  };
-
-  function setStep(k) {
-    const s = STEP_DETAILS[k];
-    if (!s) return;
-    aesMatrixGrid.innerHTML = '';
-    for (let r = 0; r < 4; r++) {
-      for (let c = 0; c < 4; c++) {
-        const cell = document.createElement('div');
-        cell.className = 'matrix-cell cell-highlight';
-        cell.textContent = s.matrix[r][c];
-        aesMatrixGrid.appendChild(cell);
-      }
-    }
-    matrixExplanation.innerHTML = `<h5>${s.title}</h5><p>${s.desc}</p>`;
-  }
-
-  stepBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      stepBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      setStep(btn.getAttribute('data-step'));
-    });
-  });
-  setStep('subbytes');
-
-  // Initial runs
-  runDualEncryption();
+  // Inisialisasi awal
+  runDesEncryption();
+  runAesEncryption();
   runDualAvalancheTest();
   runPatternLeak();
 })();

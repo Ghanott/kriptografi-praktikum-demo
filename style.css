@@ -1239,19 +1239,89 @@ body {
   overflow: hidden;
 }
 
+/* Metric Info Grid (Informatif) */
+.info-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 900px) {
+  .info-metric-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .info-metric-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.info-metric-item {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.info-lbl {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.info-val {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #ffffff;
+  font-family: var(--font-mono);
+}
+
+.info-sub {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
+.text-danger {
+  color: var(--accent-red) !important;
+}
+
+.text-success {
+  color: var(--accent-green) !important;
+}
+
 .code-card-header {
   background: rgba(255, 255, 255, 0.04);
-  padding: 0.5rem 0.85rem;
+  padding: 0.6rem 1rem;
   border-bottom: 1px solid var(--border-subtle);
   font-size: 0.78rem;
   font-weight: 700;
   color: var(--accent-orange);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.code-lang-tag {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.15rem 0.45rem;
+  border-radius: 3px;
 }
 
 .code-snippet {
-  padding: 0.85rem;
-  font-size: 0.75rem;
-  line-height: 1.5;
+  padding: 1rem;
+  font-size: 0.78rem;
+  line-height: 1.55;
   color: #cbd5e1;
   overflow-x: auto;
 }
