@@ -361,7 +361,7 @@
   });
 
   function runDesEncryption() {
-    const plain = desPlaintext.value.trim();
+    const plain = (desPlaintext.value || desPlaintext.textContent || "").trim();
     if (!plain) {
       alert("Masukkan plaintext DES terlebih dahulu!");
       return;
@@ -530,7 +530,7 @@
   });
 
   async function runAesEncryption() {
-    const plain = aesPlaintext.value.trim();
+    const plain = (aesPlaintext.value || aesPlaintext.textContent || "").trim();
     if (!plain) {
       alert("Masukkan plaintext AES terlebih dahulu!");
       return;
