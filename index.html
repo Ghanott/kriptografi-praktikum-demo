@@ -96,9 +96,68 @@
             <span class="info-sub">Rentan brute-force karena ruang kunci hanya $2^{56}$</span>
           </div>
         </div>
-        <p class="card-desc">
-          <strong>Mekanisme Feistel:</strong> Setelah Permutasi Awal (IP), blok dibagi menjadi $L_0$ dan $R_0$. Di setiap ronde dihitung $L_i = R_{i-1}$ dan $R_i = L_{i-1} \oplus f(R_{i-1}, K_i)$. Fungsi $f$ mencakup ekspansi $E$ (32&rarr;48 bit), XOR subkunci $K_i$, substitusi 8 kotak non-linear (S-Box S1..S8), dan permutasi $P$. Dekripsi menggunakan struktur yang identik dengan membalik urutan subkunci ($K_{16}$ ke $K_1$).
-        </p>
+        <!-- Penjelasan Mekanisme Feistel Disederhanakan -->
+        <div class="feistel-flow-box">
+          <div class="flow-header">
+            <h4>Alur Mekanisme Feistel DES</h4>
+            <span class="badge-mini">4 Tahap Utama</span>
+          </div>
+          <div class="feistel-steps-grid">
+            <div class="feistel-step-card-modern">
+              <div class="step-card-top">
+                <span class="step-num-badge">1</span>
+                <span class="step-title">Pembagian Blok (IP &amp; Split)</span>
+              </div>
+              <p class="step-text">
+                Data 64-bit diacak posisinya melalui Permutasi Awal (IP), lalu dibelah sama rata menjadi dua bagian 32-bit:
+              </p>
+              <div class="step-chips">
+                <span class="chip-item"><strong>$L_0$</strong> (32-bit Kiri)</span>
+                <span class="chip-item"><strong>$R_0$</strong> (32-bit Kanan)</span>
+              </div>
+            </div>
+
+            <div class="feistel-step-card-modern">
+              <div class="step-card-top">
+                <span class="step-num-badge">2</span>
+                <span class="step-title">Iterasi 16 Ronde Feistel</span>
+              </div>
+              <p class="step-text">
+                Di tiap ronde, sisi kanan diolah dengan fungsi $f$, lalu di-XOR dengan sisi kiri:
+              </p>
+              <div class="formula-chip-box font-mono">
+                <div>$L_i = R_{i-1}$</div>
+                <div>$R_i = L_{i-1} \oplus f(R_{i-1}, K_i)$</div>
+              </div>
+            </div>
+
+            <div class="feistel-step-card-modern">
+              <div class="step-card-top">
+                <span class="step-num-badge">3</span>
+                <span class="step-title">4 Tahap Fungsi Pengacak $f$</span>
+              </div>
+              <ul class="step-bullet-list">
+                <li><strong>Ekspansi (E):</strong> 32-bit diperluas jadi 48-bit.</li>
+                <li><strong>XOR Subkunci:</strong> Dicampur dengan $K_i$ (48-bit).</li>
+                <li><strong>S-Box (S1..S8):</strong> Substitusi 48-bit &rarr; 32-bit.</li>
+                <li><strong>Permutasi (P):</strong> Posisi 32-bit diacak ulang.</li>
+              </ul>
+            </div>
+
+            <div class="feistel-step-card-modern">
+              <div class="step-card-top">
+                <span class="step-num-badge">4</span>
+                <span class="step-title">Dekripsi Simetris</span>
+              </div>
+              <p class="step-text">
+                Struktur dan alur dekripsi persis sama dengan enkripsi. Hanya urutan subkunci yang dibalik:
+              </p>
+              <div class="key-reversal-box font-mono">
+                Ronde 1: $K_{16}$ &rarr; ... &rarr; Ronde 16: $K_1$
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Simulator Lab DES -->
